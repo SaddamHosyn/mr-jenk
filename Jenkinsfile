@@ -27,6 +27,12 @@ pipeline {
             defaultValue: 'No release notes provided',
             description: 'Enter release notes for this build'
         )
+        choice(
+    name: 'BUILD_TYPE',
+    choices: ['Standard', 'Hotfix', 'Release'],
+    description: 'Type of build'
+)
+
     }
     
     stages {
@@ -49,6 +55,7 @@ pipeline {
                 echo "Version: ${params.VERSION}"
                 echo "Run Tests: ${params.RUN_TESTS}"
                 echo "Deploy: ${params.DEPLOY}"
+                 echo "Build Type: ${params.BUILD_TYPE}"
                 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
                 echo "📝 Release Notes:"
                 echo "${params.RELEASE_NOTES}"
@@ -105,6 +112,7 @@ pipeline {
             echo "Environment: ${params.ENVIRONMENT}"
             echo "Tests Run: ${params.RUN_TESTS}"
             echo "Deployed: ${params.DEPLOY}"
+            echo "Build Type: ${params.BUILD_TYPE}"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         }
         failure {
