@@ -28,11 +28,15 @@ pipeline {
             description: 'Enter release notes for this build'
         )
         choice(
-    name: 'BUILD_TYPE',
-    choices: ['Standard', 'Hotfix', 'Release'],
-    description: 'Type of build'
-)
-
+            name: 'BUILD_TYPE',
+            choices: ['Standard', 'Hotfix', 'Release'],
+            description: 'Type of build'
+        )
+        booleanParam(
+            name: 'SIMULATE_FAILURE',
+            defaultValue: false,
+            description: 'Simulate a build failure for testing?'
+        )
     }
     
     stages {
@@ -55,7 +59,8 @@ pipeline {
                 echo "Version: ${params.VERSION}"
                 echo "Run Tests: ${params.RUN_TESTS}"
                 echo "Deploy: ${params.DEPLOY}"
-                 echo "Build Type: ${params.BUILD_TYPE}"
+                echo "Build Type: ${params.BUILD_TYPE}"
+                echo "Simulate Failure: ${params.SIMULATE_FAILURE}"
                 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
                 echo "📝 Release Notes:"
                 echo "${params.RELEASE_NOTES}"
@@ -78,8 +83,35 @@ pipeline {
             }
             steps {
                 echo "🧪 Running automated tests..."
-                sleep 2
-                echo "✓ All tests passed!"
+                
+                script {
+                    if (params.SIMULATE_FAILURE == true) {
+                        echo "Running tests..."
+                        echo "Test 1: PASSED ✓"
+                        echo "Test 2: PASSED ✓"
+                        echo "Test 3: FAILED ✗"
+                        error("Tests failed! 1 out of 3 tests failed.")
+                    } else {
+                        sleep 2
+                        echo "✓ All tests passed!"
+                    }
+                }
+            }
+        }
+        
+        stage('Quality Gate') {
+            steps {
+                echo "🔍 Running quality checks..."
+                
+                script {
+                    if (params.SIMULATE_FAILURE == true && params.RUN_TESTS == false) {
+                        echo "❌ Simulating build failure for testing..."
+                        echo "ERROR: Code quality threshold not met!"
+                        error("Build failed: Quality gate check failed!")
+                    } else {
+                        echo "✓ Quality gate passed!"
+                    }
+                }
             }
         }
         
@@ -103,20 +135,20 @@ pipeline {
         }
     }
     
-  post {
-    success {
-        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        echo "✅ PIPELINE COMPLETED SUCCESSFULLY!"
-        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        echo "Version: ${params.VERSION}"
-        echo "Environment: ${params.ENVIRONMENT}"
-        echo "Tests Run: ${params.RUN_TESTS}"
-        echo "Deployed: ${params.DEPLOY}"
-        echo "Build Type: ${params.BUILD_TYPE}"
-        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        
-        script {
-            def buildInfo = """
+    post {
+        success {
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "✅ PIPELINE COMPLETED SUCCESSFULLY!"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "Version: ${params.VERSION}"
+            echo "Environment: ${params.ENVIRONMENT}"
+            echo "Tests Run: ${params.RUN_TESTS}"
+            echo "Deployed: ${params.DEPLOY}"
+            echo "Build Type: ${params.BUILD_TYPE}"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            
+            script {
+                def buildInfo = """
             ✅ BUILD SUCCESS
             
             Job: ${env.JOB_NAME}
@@ -132,19 +164,19 @@ pipeline {
             Release Notes:
             ${params.RELEASE_NOTES}
             """
-            
-            echo "📧 Notification would be sent:"
-            echo buildInfo
+                
+                echo "📧 Notification would be sent:"
+                echo buildInfo
+            }
         }
-    }
-    
-    failure {
-        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        echo "❌ PIPELINE FAILED!"
-        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         
-        script {
-            def failureInfo = """
+        failure {
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "❌ PIPELINE FAILED!"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            
+            script {
+                def failureInfo = """
             ❌ BUILD FAILED
             
             Job: ${env.JOB_NAME}
@@ -156,20 +188,18 @@ pipeline {
             
             Please check the logs and fix the issue.
             """
-            
-            echo "📧 Failure notification would be sent:"
-            echo failureInfo
+                
+                echo "📧 Failure notification would be sent:"
+                echo failureInfo
+            }
+        }
+        
+        always {
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "📊 Build completed at: ${new Date()}"
+            echo "Duration: ${currentBuild.durationString}"
+            echo "Result: ${currentBuild.result}"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         }
     }
-    
-    always {
-        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        echo "📊 Build completed at: ${new Date()}"
-        echo "Duration: ${currentBuild.durationString}"
-        echo "Result: ${currentBuild.result}"
-        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    }
 }
-
-}
-
