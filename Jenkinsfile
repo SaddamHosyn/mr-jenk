@@ -103,20 +103,73 @@ pipeline {
         }
     }
     
-    post {
-        success {
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "✅ PIPELINE COMPLETED SUCCESSFULLY!"
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "Version: ${params.VERSION}"
-            echo "Environment: ${params.ENVIRONMENT}"
-            echo "Tests Run: ${params.RUN_TESTS}"
-            echo "Deployed: ${params.DEPLOY}"
-            echo "Build Type: ${params.BUILD_TYPE}"
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        }
-        failure {
-            echo "❌ Pipeline failed!"
+  post {
+    success {
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "✅ PIPELINE COMPLETED SUCCESSFULLY!"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "Version: ${params.VERSION}"
+        echo "Environment: ${params.ENVIRONMENT}"
+        echo "Tests Run: ${params.RUN_TESTS}"
+        echo "Deployed: ${params.DEPLOY}"
+        echo "Build Type: ${params.BUILD_TYPE}"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        
+        script {
+            def buildInfo = """
+            ✅ BUILD SUCCESS
+            
+            Job: ${env.JOB_NAME}
+            Build Number: ${env.BUILD_NUMBER}
+            Version: ${params.VERSION}
+            Environment: ${params.ENVIRONMENT}
+            Build Type: ${params.BUILD_TYPE}
+            Tests Run: ${params.RUN_TESTS}
+            Deployed: ${params.DEPLOY}
+            
+            Console Output: ${env.BUILD_URL}console
+            
+            Release Notes:
+            ${params.RELEASE_NOTES}
+            """
+            
+            echo "📧 Notification would be sent:"
+            echo buildInfo
         }
     }
+    
+    failure {
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "❌ PIPELINE FAILED!"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        
+        script {
+            def failureInfo = """
+            ❌ BUILD FAILED
+            
+            Job: ${env.JOB_NAME}
+            Build Number: ${env.BUILD_NUMBER}
+            Version: ${params.VERSION}
+            Environment: ${params.ENVIRONMENT}
+            
+            Console Output: ${env.BUILD_URL}console
+            
+            Please check the logs and fix the issue.
+            """
+            
+            echo "📧 Failure notification would be sent:"
+            echo failureInfo
+        }
+    }
+    
+    always {
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "📊 Build completed at: ${new Date()}"
+        echo "Duration: ${currentBuild.durationString}"
+        echo "Result: ${currentBuild.result}"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    }
 }
+
+}
+
